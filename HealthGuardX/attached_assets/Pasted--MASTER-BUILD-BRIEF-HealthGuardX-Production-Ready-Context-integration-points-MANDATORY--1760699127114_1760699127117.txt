@@ -1,0 +1,183 @@
+# MASTER BUILD BRIEF — HealthGuardX (Production Ready)
+
+**Context & integration points (MANDATORY):**
+
+* **Smart contract address:** `0xdDe2C1088D5353B61f54F1666Ec411499aBeacf7`
+* **Default admin wallet address (auto-admin):** `0x3c17f3F514658fACa2D24DE1d29F542a836FD10A` — when this wallet connects, the app must immediately present the Admin dashboard and grant all admin features in the UI.
+* The dApp must treat the smart contract as the canonical backend for identity, role mapping, UID, CID pointers, KYC status, wrapped key references, emergency events, and insurance claims. **Every UI read/write must call the contract** (or verify contract events). No UI placeholder data. No local-only fakes.
+
+---
+
+## Overall product goal
+
+Deliver a **production-quality decentralized web application** called **HealthGuardX**: a secure, NIST/ISO-oriented emergency medical identity + insurance claim system that is user-first, highly polished, accessible, responsive, and fully integrated with the provided smart contract and decentralized file storage for encrypted records. The product must be ready to hand to users (patients, doctors, hospitals, emergency personnel, insurers, and admins) and to demo for judges or stakeholders.
+
+---
+
+## Must-have deliverables
+
+1. Complete source code repository (clean structure, modular, commented).
+2. Fully functional frontend (landing + dashboards + public emergency scanner).
+3. Integration with the smart contract address above for all reads/writes.
+4. Encrypted file upload flow to decentralized file storage (store CIDs on-chain).
+5. QR/NFC generation and scan flow (QR scanner web page + downloadable QR).
+6. KYC upload/approval pipeline (patient and role applicant flows).
+7. Insurance claim submission, verification, approval, and payout simulation tied to contract events.
+8. Real-time activity feed that streams contract events (registered users, claims, approvals, emergency accesses).
+9. Admin dashboard that auto-activates when admin wallet connects.
+10. Accessibility, responsiveness, dark-mode-first visuals, animations, and polished UX.
+11. Automated tests (unit + integration) that validate contract interactions and workflows in a local emulator and testnet.
+12. README, deployment instructions, and a 2-minute demo script.
+
+---
+
+## High-level product behavior & rules (non-negotiable)
+
+* **No mock data.** Everything visible to the user must come from contract state or verified decentralized storage. If a feature requires off-chain verification (e.g., insurer KYC), implement a simulated but auditable on-chain flow that reflects real-world usage and document production steps required for production (e.g., real KYC provider integration).
+* **Role detection & dashboard switching:** Immediately after wallet connect, read the address on-chain and determine the role(s). If the connected wallet equals `0x3c17f3F514658fACa2D24DE1d29F542a836FD10A`, present the Admin dashboard (no additional KYC prompt). Otherwise, show the appropriate dashboard or the restricted user dashboard pending KYC. A user may have multiple roles; present aggregated capabilities (patient + requested role).
+* **Security-first:** All sensitive operations (upload, key wrapping, adding wrapped key blobs, emergency grants, claim submissions) must be performed only after client-side encryption or signature steps as defined by the system — no plaintext data on-chain or in public storage. Every action that changes access or creates payments must be logged on-chain (via events) and shown in the audit panels.
+* **Emergency flow:** public QR scan returns a *limited emergency summary* (blood type, allergies, critical flags, insurance status). Authenticated hospital/doctor wallets may use the scanner module inside their dashboard to request extended access; extended access follows the contract policy (pre-authorized, emergency grant, or patient approval) and is auditable. All emergency access attempts must produce on-chain events and be presented in real time to patient and admin dashboards.
+* **Insurance flow:** insurance providers must be able to view only the information necessary to verify claims (signed treatment hashes, invoice CIDs). Implement on-chain claim lifecycle UI: submit → insurer review → approve/reject → (on approve) simulated payout action documented on-chain. Show clear audit trail and allow admin to intervene.
+
+---
+
+## UX & design brief — Landing page (exact expectations)
+
+Build a high-converting, immersive landing page (dark mode by default) that converts visitors to wallet connect. The landing page must be visually striking, accessible, and polished:
+
+* **Header:** prominent logo (HealthGuardX), nav (Home, About, Features, Workflow, Live Activity), Connect Wallet CTA (sticky). When the admin wallet connects, show an “ADMIN MODE” subtle badge in header.
+* **Hero section:** full-bleed dark-gradient background with subtle animated elements (floating network lines, soft motion). Use an evocative headline:
+  *“HealthGuardX — Your Life-Saving Decentralized Medical Identity”*
+  Subheadline: *“Instant, secure medical access. Tamper-proof treatment logs. Fraud-resistant insurance payouts.”*
+  Primary CTA: `Connect Wallet & Generate Health ID` (animated micro-interactions and ripple on hover).
+* **Hero visuals:** a semi-transparent glass card mockup of the app UI on the right, with a looping micro-demo (auto-playing GIF or lightweight animation) showing scanning QR → emergency summary → insurance approval.
+* **About section:** short paragraphs describing mission, real benefits in low-connectivity contexts, and trust points (NIST/ISO, BlockDAG compatibility, audit logs).
+* **Features section:** 4–6 illustrated cards (icons + short text) for “Emergency QR”, “Encrypted Records”, “Role-Based Dashboards”, “Insurance Automation”, “Immutable Audit Logs”, “Offline-ready QR/NFC”.
+* **Workflow section:** 4–6 step horizontal timeline visualizing onboarding → KYC → QR → emergency scan → treatment & claim flow. Each step expands into a modal with concise technical details.
+* **Live Activity feed:** dynamic component showing the latest on-chain events as human-readable sentences (e.g., “New patient registered: UID HX-...”, “Claim #12 submitted”, “Emergency access granted for UID HX-...”). This MUST be fed from contract events.
+* **Visual style:** dark-first, futuristic, glassmorphism cards, smooth transitions, subtle motion (no flashy noise), color accents that imply trust and health (deep blues, teal accents, accent orange for CTAs). Ensure strong color contrast and accessibility compliance.
+* **Mobile responsive behavior:** collapse hero visuals gracefully, stack content, large tappable CTAs, and persistent Connect Wallet action. Landing page must feel premium on phone, tablet, and desktop.
+
+---
+
+## UX & design brief — Dashboards & core screens
+
+Each role gets a bespoke dashboard. Dashboards should be interactive, analytics-rich, and attractive. Default theme is dark. All dashboards must support responsive reflow.
+
+### Patient Dashboard
+
+* **Top summary:** UID card with QR (download/share), KYC status, insurance linked status, “Emergency Mode” toggle, and a one-line last access summary.
+* **Profile & Records:** Upload encrypted files (max size show), list of records (CID, timestamp, uploader, purpose). Each record item must show verification hash and who has access.
+* **Access Control:** intuitive grant/revoke UI for doctors/hospitals (search by wallet UID or scan), manage pre-authorized emergency addresses, set time-limited grants.
+* **Audit log:** chronological feed showing who accessed records, when, and under what mode (emergency/approved). Each log row links back to the raw on-chain event.
+* **Role application:** form to apply for Doctor/Hospital/Insurer roles with step-by-step KYC upload flow and status tracker.
+* **Notifications:** in-app notifications for access requests, claim statuses, admin messages.
+
+### Doctor Dashboard
+
+* **Search & Quick-Scan:** top field to search by UID/username and an embedded QR scanner (camera) page.
+* **Patient card:** when selected, show emergency summary (if emergency), or request full access with pre-filled signature request UX.
+* **Add Treatment:** form to upload treatment record (encrypted), sign treatment hash with wallet, and optionally submit claim invoice.
+* **Signed artifacts:** all doctor-submitted records must be signed and the signature shown for insurer verification.
+* **Analytics:** personal activity, patient visits, outstanding access requests.
+
+### Hospital Dashboard
+
+* **Institution panel:** register doctors under hospital, assign beds/patient lists, admit/transfer flows.
+* **Billing & Claim Export:** create invoices (CID stored), submit claims to insurer, and track claim statuses.
+* **Emergency queue:** list of incoming emergency QR scans routed to hospital’s emergency phones (real-time).
+
+### Emergency Responder Module
+
+* **Public QR scanner page:** minimal friction scanner accessible without wallet connect for emergency summary only; must confirm limited data policy visually.
+* **Responder dashboard (for verified emergency role):** full emergency queue, incident logging (geo-tag optional), and “transfer to hospital” action which generates an on-chain event.
+
+### Insurance Dashboard
+
+* **Claim queue:** encrypted proof links and signed treatment hashes, ability to approve/reject with on-chain action.
+* **Policy view:** map of patient policies linked to UID; simulate escrow balances and payouts with clear audit trail.
+* **Fraud detection (basic):** highlight mismatched signatures or duplicated claims.
+
+### Admin Dashboard (Auto-activate for admin wallet)
+
+* **KYC queue:** list submissions with CID links to encrypted KYC docs, Approve/Reject buttons (calls contract approveKyc/rejectKyc).
+* **Role approvals:** table of pending role applications, one-click approve to call on-chain role grant functions.
+* **System analytics:** charts for total users, active patients, emergency events, pending claims, total payouts.
+* **Audit & Compliance:** search on-chain events, export logs, toggle emergency access policy (strict/lenient), pause/unpause contract UI (calls pause/unpause).
+* **Security actions:** suspend account, revoke role, withdraw accidental funds (call adminWithdraw).
+
+---
+
+## Functional workflow & rules (exact behavior)
+
+* **On first connect:**
+
+  * If wallet not registered, present registration modal. On register action call contract registerUser/ registerPatient flow (as applicable). After registration, user remains in restricted dashboard until KYC submitted and approved.
+  * If wallet registers as admin address exactly `0x3c17f3F...`, present Admin dashboard immediately.
+* **KYC process:**
+
+  * KYC docs must be encrypted client-side, uploaded to decentralized storage, and the CID submitted on-chain or via a secure off-chain tracker with hash on-chain. Admin sees KYC as a CID and can approve/reject on-chain.
+* **Uploading records:**
+
+  * Client-side generate symmetric key per file, encrypt file, upload encrypted file to decentralized storage, compute CID and file integrity hash, and store CID pointer on-chain using the contract’s update function.
+  * For access, patient will create wrappedKey blobs encrypted to grantee public keys and addWrappedKey on-chain. Client must implement ECIES/ECDH wrapping and store wrapped blobs as bytes referenced by the contract.
+* **QR behavior:**
+
+  * QR contains the UID or secure vault pointer only — no PII or unencrypted data. Scanning a QR triggers a read of the contract for emergency summary or full CID pointers based on the scanner’s wallet role. Public scans show only emergency summary and a clear notice of limited data.
+* **Emergency grant escalation:**
+
+  * Emergency pre-auth: patient may pre-authorize addresses that auto-grant temporary wrappedKey expiry. If not pre-authorized, emergency request emits event and admin or guardians may grant emergency access; any emergency grant must be time-limited and logged.
+* **Claims & Insurance:**
+
+  * Hospital/Doctor submits claim with proofCid; insurer reviews, approves/rejects on-chain; on approval the insurer (or admin in demo mode) triggers releasePayout which simulates transfer and writes payout event.
+* **Audit & transparency:**
+
+  * All critical events (register, kyc submitted/approved, wrapped key added/removed, emergency request/grant, claim submit/approve/reject, payout) must be read as events and displayed in real time throughout the UI.
+
+---
+
+## Production quality requirements
+
+* **Polished UI/UX:** high-performance, optimized assets, lazy-loading where appropriate. Micro-interactions, skeleton loaders, animated feedback for every transaction.
+* **Accessibility:** keyboard navigation, ARIA labels, high-contrast color choices, adjustable font scaling.
+* **Responsiveness:** tested and tuned for phone, tablet, and desktop viewport breakpoints.
+* **Security:** client-side encryption of files + secure key-wrapping; wallet signature confirmations for sensitive actions; prevention of common web vulnerabilities; proper handling of user session state (no sensitive storage in plain localStorage).
+* **Testing:** supply automated tests that simulate user flows with a local blockchain/emulator and testnet interactions for:
+
+  * registration, kyc submission & approval
+  * upload records & grant/revoke access
+  * emergency request & grant
+  * claim submit & approve → payout
+* **Documentation:** README with setup, deployment, environment notes, a 2-minute demo script, and developer docs describing the encryption and wrapped-key protocol used.
+* **Deployable repo:** final repo must be runnable on Replit with a single “Run” or similar action that launches the app connected to the provided contract on the correct network. Include steps to switch to a local emulator or testnet.
+
+---
+
+## Acceptance criteria (how to prove it's done)
+
+1. **Connect Wallet** shows correct role dashboard immediately; connecting the admin wallet `0x3c17...` must instantly show admin features.
+2. **Register & KYC**: new wallet can register, upload encrypted KYC, admin can approve via Admin dashboard and KYC status updates on-chain are reflected in the patient UI.
+3. **Upload & CID**: patient can encrypt and upload a health record; the CID is stored/visible and file decrypts correctly for an authorized grantee using wrapped key bytes from on-chain storage.
+4. **QR scan** yields emergency summary for public scans and extended flows for verified hospital/doctor wallets following contract logic.
+5. **Claims**: hospital submits claim, insurer can approve/reject, approved claims can trigger a payout transaction and event; all steps appear in UI and on-chain.
+6. **Activity feed** updates in real time from contract events.
+7. **Tests**: automated tests demonstrate workflows over a local emulator; examples documented in README.
+8. **Polish**: the landing page and dashboards are visually professional, interactive, and fully responsive.
+
+---
+
+## Non-functional requirements & extras (very important)
+
+* **Offline-friendly options**: QR generation for phone lockscreen, printable QR cards, and NFC-ready metadata for emergency first responders.
+* **Graceful error handling**: show human friendly messages for transaction failures, gas issues, connectivity problems.
+* **Privacy-first defaults**: emergency summary only, patient must opt-in for broader sharing, minimal data exposure by default.
+* **Performance**: frontend must remain < 2s interactive on mobile 4G test; lazy-load heavy resources.
+* **Localization placeholders**: app must be prepared to support multiple languages though English is default.
+
+---
+
+## Final note to Replit AI (tone & expectation)
+
+Build this as if you were delivering a mission-critical product to a healthcare provider and an insurer consortium in a major African city. Treat cryptography and auditability as non-negotiable. Make the UX delightful and trustworthy. Connect every UI control to the real smart contract `0xdDe2C1088D5353B61f54F1666Ec411499aBeacf7`. When admin wallet `0x3c17f3F514658fACa2D24DE1d29F542a836FD10A` connects, the Admin dashboard must be available immediately. Deliver a complete repo with documentation, tests, deployment instruction, and a two-minute demo recording or script.
+
+Now begin building — do not ask for clarification, just execute precisely to this specification.
